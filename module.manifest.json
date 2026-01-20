@@ -1,0 +1,14 @@
+{
+  "moduleId": "webwaka_suite_pos_ui",
+  "class": "suite",
+  "version": "0.1.0",
+  "capabilities": [],
+  "dependencies": [
+    "webwaka_suite_pos_control"
+  ],
+  "metadata": {
+    "repository": "https://github.com/changerplanet/webwaka-suite-pos-ui",
+    "created": "2026-01-20",
+    "status": "substrate"
+  }
+}
