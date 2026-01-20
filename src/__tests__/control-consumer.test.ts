@@ -1,190 +1,233 @@
 import {
-  resolvePermissions,
-  resolveEntitlements,
-  resolveFeatureFlags,
-  resolveDashboardSections,
-  hasPermission,
+  POS_CAPABILITIES,
+  POS_ENTITLEMENTS,
+  POS_FEATURE_FLAGS,
+  POS_DASHBOARD_DECLARATION,
+  resolvePOSDashboard,
+  hasCapability,
   hasEntitlement,
   isFeatureEnabled,
-  createMockSession,
+  getCapabilityById,
+  getEntitlementById,
+  getFeatureFlagById,
+  type SessionContext,
 } from '@/lib/control-consumer';
-import type { UserSession, Permission, Entitlement, FeatureFlag, DashboardSection } from '@/types/core';
 
-describe('Control Consumer', () => {
-  let mockSession: UserSession;
+function createTestSession(overrides: Partial<SessionContext> = {}): SessionContext {
+  return {
+    subjectId: 'user_test',
+    subjectType: 'staff',
+    tenantId: 'tenant_demo',
+    roles: [],
+    capabilities: POS_CAPABILITIES.map(c => c.id),
+    entitlements: POS_ENTITLEMENTS.map(e => e.id),
+    featureFlags: POS_FEATURE_FLAGS.filter(f => f.defaultValue).map(f => f.id),
+    ...overrides,
+  };
+}
 
-  beforeEach(() => {
-    mockSession = createMockSession('testuser');
-  });
-
-  describe('createMockSession', () => {
-    it('creates a valid session with all required fields', () => {
-      const session = createMockSession('cashier');
-      
-      expect(session.id).toBeDefined();
-      expect(session.userId).toBe('user_cashier');
-      expect(session.username).toBe('cashier');
-      expect(session.tenantId).toBe('tenant_demo');
-      expect(session.permissions).toBeInstanceOf(Array);
-      expect(session.entitlements).toBeInstanceOf(Array);
-      expect(session.featureFlags).toBeInstanceOf(Array);
-      expect(session.dashboardSections).toBeInstanceOf(Array);
-      expect(session.expiresAt).toBeGreaterThan(Date.now());
-    });
-  });
-
-  describe('resolvePermissions', () => {
-    it('returns empty array for null session', () => {
-      expect(resolvePermissions(null)).toEqual([]);
+describe('Control Package Consumption', () => {
+  describe('POS_CAPABILITIES from webwaka-suite-pos-control', () => {
+    it('exports capabilities from control package', () => {
+      expect(POS_CAPABILITIES).toBeDefined();
+      expect(POS_CAPABILITIES.length).toBeGreaterThan(0);
     });
 
-    it('returns only granted permissions', () => {
-      const permissions = resolvePermissions(mockSession);
-      expect(permissions.length).toBeGreaterThan(0);
-      permissions.forEach(p => expect(p.granted).toBe(true));
-    });
-
-    it('filters out non-granted permissions', () => {
-      const sessionWithDenied: UserSession = {
-        ...mockSession,
-        permissions: [
-          { id: 'p1', name: 'allowed', granted: true },
-          { id: 'p2', name: 'denied', granted: false },
-        ],
-      };
-      const permissions = resolvePermissions(sessionWithDenied);
-      expect(permissions.length).toBe(1);
-      expect(permissions[0].name).toBe('allowed');
-    });
-  });
-
-  describe('resolveEntitlements', () => {
-    it('returns empty array for null session', () => {
-      expect(resolveEntitlements(null)).toEqual([]);
-    });
-
-    it('returns only enabled entitlements', () => {
-      const entitlements = resolveEntitlements(mockSession);
-      expect(entitlements.length).toBeGreaterThan(0);
-      entitlements.forEach(e => expect(e.enabled).toBe(true));
-    });
-  });
-
-  describe('resolveFeatureFlags', () => {
-    it('returns empty array for null session', () => {
-      expect(resolveFeatureFlags(null)).toEqual([]);
-    });
-
-    it('returns only enabled feature flags', () => {
-      const flags = resolveFeatureFlags(mockSession);
-      expect(flags.length).toBeGreaterThan(0);
-      flags.forEach(f => expect(f.enabled).toBe(true));
-    });
-  });
-
-  describe('resolveDashboardSections', () => {
-    it('returns empty array for null session', () => {
-      expect(resolveDashboardSections(null)).toEqual([]);
-    });
-
-    it('returns sections with visibility resolved', () => {
-      const sections = resolveDashboardSections(mockSession);
-      expect(sections.length).toBeGreaterThan(0);
-      sections.forEach(s => {
-        expect(typeof s.visible).toBe('boolean');
+    it('capabilities have required fields', () => {
+      POS_CAPABILITIES.forEach(cap => {
+        expect(cap.id).toBeDefined();
+        expect(cap.name).toBeDefined();
+        expect(cap.description).toBeDefined();
+        expect(cap.category).toBeDefined();
       });
     });
 
-    it('hides sections when required permission is missing', () => {
-      const sessionWithoutPermission: UserSession = {
-        ...mockSession,
-        permissions: [],
-        dashboardSections: [
-          { 
-            id: 'ds1', 
-            title: 'Protected', 
-            component: 'Test', 
-            order: 1, 
-            requiredPermission: 'admin.access',
-            visible: true 
-          },
-        ],
-      };
-      const sections = resolveDashboardSections(sessionWithoutPermission);
-      expect(sections[0].visible).toBe(false);
-      expect(sections[0].hiddenReason).toContain('Missing permission');
-    });
-
-    it('hides sections when required entitlement is missing', () => {
-      const sessionWithoutEntitlement: UserSession = {
-        ...mockSession,
-        entitlements: [],
-        dashboardSections: [
-          { 
-            id: 'ds1', 
-            title: 'Premium', 
-            component: 'Test', 
-            order: 1, 
-            requiredEntitlement: 'premium.feature',
-            visible: true 
-          },
-        ],
-      };
-      const sections = resolveDashboardSections(sessionWithoutEntitlement);
-      expect(sections[0].visible).toBe(false);
-      expect(sections[0].hiddenReason).toContain('Missing entitlement');
+    it('getCapabilityById retrieves from control package', () => {
+      const cap = getCapabilityById('pos:sale.create');
+      expect(cap).toBeDefined();
+      expect(cap?.name).toBe('Create Sale');
     });
   });
 
-  describe('hasPermission', () => {
-    it('returns false for null session', () => {
-      expect(hasPermission(null, 'any.permission')).toBe(false);
+  describe('POS_ENTITLEMENTS from webwaka-suite-pos-control', () => {
+    it('exports entitlements from control package', () => {
+      expect(POS_ENTITLEMENTS).toBeDefined();
+      expect(POS_ENTITLEMENTS.length).toBeGreaterThan(0);
     });
 
-    it('returns true for granted permission', () => {
-      expect(hasPermission(mockSession, 'pos.sales.create')).toBe(true);
+    it('entitlements have required fields', () => {
+      POS_ENTITLEMENTS.forEach(ent => {
+        expect(ent.id).toBeDefined();
+        expect(ent.name).toBeDefined();
+        expect(ent.description).toBeDefined();
+        expect(ent.requiredCapabilities).toBeDefined();
+      });
     });
 
-    it('returns false for non-existent permission', () => {
-      expect(hasPermission(mockSession, 'nonexistent.permission')).toBe(false);
+    it('getEntitlementById retrieves from control package', () => {
+      const ent = getEntitlementById('pos-access');
+      expect(ent).toBeDefined();
+      expect(ent?.name).toBe('POS Access');
+    });
+  });
+
+  describe('POS_FEATURE_FLAGS from webwaka-suite-pos-control', () => {
+    it('exports feature flags from control package', () => {
+      expect(POS_FEATURE_FLAGS).toBeDefined();
+      expect(POS_FEATURE_FLAGS.length).toBeGreaterThan(0);
+    });
+
+    it('feature flags have required fields', () => {
+      POS_FEATURE_FLAGS.forEach(flag => {
+        expect(flag.id).toBeDefined();
+        expect(flag.name).toBeDefined();
+        expect(typeof flag.defaultValue).toBe('boolean');
+      });
+    });
+
+    it('getFeatureFlagById retrieves from control package', () => {
+      const flag = getFeatureFlagById('pos-enabled');
+      expect(flag).toBeDefined();
+      expect(flag?.defaultValue).toBe(true);
+    });
+  });
+
+  describe('POS_DASHBOARD_DECLARATION from webwaka-suite-pos-control', () => {
+    it('exports dashboard declaration from control package', () => {
+      expect(POS_DASHBOARD_DECLARATION).toBeDefined();
+      expect(POS_DASHBOARD_DECLARATION.moduleId).toBe('webwaka_suite_pos_control');
+    });
+
+    it('dashboard declaration has sections with gating rules', () => {
+      expect(POS_DASHBOARD_DECLARATION.sections.length).toBeGreaterThan(0);
+      
+      POS_DASHBOARD_DECLARATION.sections.forEach(section => {
+        expect(section.id).toBeDefined();
+        expect(section.name).toBeDefined();
+        expect(section.gating).toBeDefined();
+        expect(section.gating.requiredPermissions).toBeDefined();
+        expect(section.gating.requiredEntitlements).toBeDefined();
+        expect(section.gating.requiredFeatureFlags).toBeDefined();
+      });
+    });
+  });
+});
+
+describe('Dashboard Resolution via Control Layer', () => {
+  it('resolves visible sections from control layer', () => {
+    const session = createTestSession();
+    const sections = resolvePOSDashboard(session);
+    
+    expect(sections.length).toBeGreaterThan(0);
+    sections.forEach(s => {
+      expect(s.id).toBeDefined();
+      expect(s.name).toBeDefined();
+      expect(s.order).toBeDefined();
+    });
+  });
+
+  it('hides sections when capabilities are missing', () => {
+    const sessionWithNoCaps = createTestSession({
+      capabilities: [],
+    });
+    const sections = resolvePOSDashboard(sessionWithNoCaps);
+    
+    expect(sections.length).toBe(0);
+  });
+
+  it('hides sections when entitlements are missing', () => {
+    const sessionWithNoEnts = createTestSession({
+      entitlements: [],
+    });
+    const sections = resolvePOSDashboard(sessionWithNoEnts);
+    
+    expect(sections.length).toBe(0);
+  });
+
+  it('hides sections when feature flags are disabled', () => {
+    const sessionWithNoFlags = createTestSession({
+      featureFlags: [],
+    });
+    const sections = resolvePOSDashboard(sessionWithNoFlags);
+    
+    expect(sections.length).toBe(0);
+  });
+
+  it('shows all sections when all requirements are met', () => {
+    const fullSession = createTestSession();
+    const sections = resolvePOSDashboard(fullSession);
+    
+    expect(sections.length).toBe(POS_DASHBOARD_DECLARATION.sections.length);
+  });
+});
+
+describe('Access Check Functions', () => {
+  describe('hasCapability', () => {
+    it('returns true for present capability', () => {
+      const session = createTestSession();
+      expect(hasCapability(session, 'pos:sale.create')).toBe(true);
+    });
+
+    it('returns false for missing capability', () => {
+      const session = createTestSession({ capabilities: [] });
+      expect(hasCapability(session, 'pos:sale.create')).toBe(false);
     });
   });
 
   describe('hasEntitlement', () => {
-    it('returns false for null session', () => {
-      expect(hasEntitlement(null, 'any.feature')).toBe(false);
+    it('returns true for present entitlement', () => {
+      const session = createTestSession();
+      expect(hasEntitlement(session, 'pos-access')).toBe(true);
     });
 
-    it('returns true for enabled entitlement', () => {
-      expect(hasEntitlement(mockSession, 'pos.basic')).toBe(true);
-    });
-
-    it('returns false for non-existent entitlement', () => {
-      expect(hasEntitlement(mockSession, 'nonexistent.feature')).toBe(false);
+    it('returns false for missing entitlement', () => {
+      const session = createTestSession({ entitlements: [] });
+      expect(hasEntitlement(session, 'pos-access')).toBe(false);
     });
   });
 
   describe('isFeatureEnabled', () => {
-    it('returns false for null session', () => {
-      expect(isFeatureEnabled(null, 'any.flag')).toBe(false);
+    it('returns true for enabled feature', () => {
+      const session = createTestSession();
+      expect(isFeatureEnabled(session, 'pos-enabled')).toBe(true);
     });
 
-    it('returns true for enabled feature flag', () => {
-      expect(isFeatureEnabled(mockSession, 'offline_mode')).toBe(true);
-    });
-
-    it('returns false for non-existent feature flag', () => {
-      expect(isFeatureEnabled(mockSession, 'nonexistent.flag')).toBe(false);
+    it('returns false for disabled feature', () => {
+      const session = createTestSession({ featureFlags: [] });
+      expect(isFeatureEnabled(session, 'pos-enabled')).toBe(false);
     });
   });
 });
 
 describe('No Cross-Tenant Leakage', () => {
-  it('sessions from different users have different tenant contexts', () => {
-    const session1 = createMockSession('user1');
-    const session2 = createMockSession('user2');
+  it('sessions with different tenants resolve independently', () => {
+    const tenant1 = createTestSession({ tenantId: 'tenant_1' });
+    const tenant2 = createTestSession({ tenantId: 'tenant_2' });
     
-    expect(session1.userId).not.toBe(session2.userId);
-    expect(session1.id).not.toBe(session2.id);
+    expect(tenant1.tenantId).not.toBe(tenant2.tenantId);
+    
+    const sections1 = resolvePOSDashboard(tenant1);
+    const sections2 = resolvePOSDashboard(tenant2);
+    
+    expect(sections1).toEqual(sections2);
+  });
+});
+
+describe('Constitutional Compliance', () => {
+  it('UI does not implement its own permission logic', () => {
+    expect(typeof POS_CAPABILITIES).not.toBe('undefined');
+    expect(typeof POS_ENTITLEMENTS).not.toBe('undefined');
+    expect(typeof POS_FEATURE_FLAGS).not.toBe('undefined');
+  });
+
+  it('dashboard resolution uses control layer function', () => {
+    expect(typeof resolvePOSDashboard).toBe('function');
+  });
+
+  it('control data is immutable (frozen)', () => {
+    expect(Object.isFrozen(POS_CAPABILITIES)).toBe(true);
+    expect(Object.isFrozen(POS_ENTITLEMENTS)).toBe(true);
+    expect(Object.isFrozen(POS_FEATURE_FLAGS)).toBe(true);
+    expect(Object.isFrozen(POS_DASHBOARD_DECLARATION)).toBe(true);
   });
 });

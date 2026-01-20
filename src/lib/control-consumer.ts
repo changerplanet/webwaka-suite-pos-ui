@@ -1,111 +1,184 @@
-import type { 
-  Permission, 
-  Entitlement, 
-  FeatureFlag, 
-  DashboardSection,
-  UserSession 
-} from '@/types/core';
+import {
+  POS_CAPABILITIES,
+  getCapabilityById as getPOSCapabilityById,
+  getCapabilitiesByCategory,
+  getAllCapabilityIds,
+} from 'webwaka-suite-pos-control/src/capabilities';
 
-const MOCK_PERMISSIONS: Permission[] = [
-  { id: 'perm_sales', name: 'pos.sales.create', granted: true },
-  { id: 'perm_refunds', name: 'pos.refunds.create', granted: true },
-  { id: 'perm_shift', name: 'pos.shift.manage', granted: true },
-  { id: 'perm_reports', name: 'pos.reports.view', granted: true },
-  { id: 'perm_inventory', name: 'pos.inventory.view', granted: true },
-];
+import {
+  POS_ENTITLEMENTS,
+  getEntitlementById as getPOSEntitlementById,
+  getEntitlementsByCapability,
+  getAllEntitlementIds,
+} from 'webwaka-suite-pos-control/src/entitlements';
 
-const MOCK_ENTITLEMENTS: Entitlement[] = [
-  { id: 'ent_pos_basic', featureKey: 'pos.basic', enabled: true },
-  { id: 'ent_pos_advanced', featureKey: 'pos.advanced', enabled: true },
-  { id: 'ent_inventory', featureKey: 'inventory.management', enabled: true },
-  { id: 'ent_reports', featureKey: 'reports.basic', enabled: true },
-];
+import {
+  POS_FEATURE_FLAGS,
+  getFeatureFlagById as getPOSFeatureFlagById,
+  getDefaultFeatureFlagValues,
+  getAllFeatureFlagIds,
+} from 'webwaka-suite-pos-control/src/featureFlags';
 
-const MOCK_FEATURE_FLAGS: FeatureFlag[] = [
-  { id: 'ff_offline', key: 'offline_mode', enabled: true },
-  { id: 'ff_receipts', key: 'digital_receipts', enabled: true },
-  { id: 'ff_quick_sale', key: 'quick_sale_mode', enabled: true },
-];
+import {
+  POS_DASHBOARD_DECLARATION,
+  resolveVisibleSections,
+  getDashboardDeclaration,
+  getSectionById,
+} from 'webwaka-suite-pos-control/src/dashboard/pos.dashboard';
 
-const MOCK_DASHBOARD_SECTIONS: DashboardSection[] = [
-  { id: 'ds_sales', title: 'Quick Sale', component: 'QuickSale', order: 1, visible: true },
-  { id: 'ds_cart', title: 'Cart', component: 'Cart', order: 2, visible: true },
-  { id: 'ds_products', title: 'Products', component: 'ProductGrid', order: 3, visible: true },
-  { id: 'ds_shift', title: 'Shift Management', component: 'ShiftManager', order: 4, requiredPermission: 'pos.shift.manage', visible: true },
-  { id: 'ds_reports', title: 'Reports', component: 'Reports', order: 5, requiredEntitlement: 'reports.basic', visible: true, hiddenReason: 'Requires reports entitlement' },
-];
+import type {
+  Capability,
+  Entitlement as POSEntitlement,
+  FeatureFlag as POSFeatureFlag,
+  TenantContext,
+  VisibleSection,
+  DashboardDeclaration,
+} from 'webwaka-suite-pos-control/src/types';
 
-export function resolvePermissions(session: UserSession | null): Permission[] {
-  if (!session) return [];
-  return session.permissions.filter(p => p.granted);
+import {
+  resolveDashboard,
+  TenantIsolationError,
+  PartnerIsolationError,
+  SubjectAccessError,
+} from 'webwaka-core-dashboard-control/src/engine/resolver';
+
+import {
+  generateDashboardSnapshot,
+  verifyDashboardSnapshot,
+  verifySnapshotIntegrity,
+  evaluateFromSnapshot,
+} from 'webwaka-core-dashboard-control/src/engine/snapshot';
+
+import type {
+  DashboardContext,
+  PermissionResult,
+  EntitlementSnapshot,
+  FeatureSnapshot,
+  ResolvedDashboard,
+  DashboardSnapshot,
+  HiddenReason,
+  DashboardSection as CoreDashboardSection,
+  DashboardDeclaration as CoreDashboardDeclaration,
+} from 'webwaka-core-dashboard-control/src/models/schemas';
+
+export type {
+  Capability,
+  POSEntitlement,
+  POSFeatureFlag,
+  TenantContext,
+  VisibleSection,
+  DashboardDeclaration,
+  DashboardContext,
+  PermissionResult,
+  EntitlementSnapshot,
+  FeatureSnapshot,
+  ResolvedDashboard,
+  DashboardSnapshot,
+  HiddenReason,
+  CoreDashboardSection,
+  CoreDashboardDeclaration,
+};
+
+export {
+  POS_CAPABILITIES,
+  POS_ENTITLEMENTS,
+  POS_FEATURE_FLAGS,
+  POS_DASHBOARD_DECLARATION,
+  resolveDashboard,
+  resolveVisibleSections,
+  getDefaultFeatureFlagValues,
+  getDashboardDeclaration,
+  getSectionById,
+  getCapabilitiesByCategory,
+  getAllCapabilityIds,
+  getEntitlementsByCapability,
+  getAllEntitlementIds,
+  getAllFeatureFlagIds,
+  generateDashboardSnapshot,
+  verifyDashboardSnapshot,
+  verifySnapshotIntegrity,
+  evaluateFromSnapshot,
+  TenantIsolationError,
+  PartnerIsolationError,
+  SubjectAccessError,
+};
+
+export interface SessionContext {
+  subjectId: string;
+  subjectType: 'super_admin' | 'partner_admin' | 'tenant_admin' | 'staff' | 'user';
+  tenantId: string;
+  partnerId?: string;
+  roles: string[];
+  capabilities: string[];
+  entitlements: string[];
+  featureFlags: string[];
 }
 
-export function resolveEntitlements(session: UserSession | null): Entitlement[] {
-  if (!session) return [];
-  return session.entitlements.filter(e => e.enabled);
-}
-
-export function resolveFeatureFlags(session: UserSession | null): FeatureFlag[] {
-  if (!session) return [];
-  return session.featureFlags.filter(f => f.enabled);
-}
-
-export function resolveDashboardSections(session: UserSession | null): DashboardSection[] {
-  if (!session) return [];
-  
-  const permissions = resolvePermissions(session);
-  const entitlements = resolveEntitlements(session);
-  
-  return session.dashboardSections.map(section => {
-    let visible = true;
-    let hiddenReason: string | undefined;
-
-    if (section.requiredPermission) {
-      const hasPermission = permissions.some(p => p.name === section.requiredPermission);
-      if (!hasPermission) {
-        visible = false;
-        hiddenReason = `Missing permission: ${section.requiredPermission}`;
-      }
-    }
-
-    if (section.requiredEntitlement && visible) {
-      const hasEntitlement = entitlements.some(e => e.featureKey === section.requiredEntitlement);
-      if (!hasEntitlement) {
-        visible = false;
-        hiddenReason = `Missing entitlement: ${section.requiredEntitlement}`;
-      }
-    }
-
-    return { ...section, visible, hiddenReason };
-  });
-}
-
-export function hasPermission(session: UserSession | null, permissionName: string): boolean {
-  if (!session) return false;
-  return session.permissions.some(p => p.name === permissionName && p.granted);
-}
-
-export function hasEntitlement(session: UserSession | null, featureKey: string): boolean {
-  if (!session) return false;
-  return session.entitlements.some(e => e.featureKey === featureKey && e.enabled);
-}
-
-export function isFeatureEnabled(session: UserSession | null, flagKey: string): boolean {
-  if (!session) return false;
-  return session.featureFlags.some(f => f.key === flagKey && f.enabled);
-}
-
-export function createMockSession(username: string): UserSession {
-  const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+export function createDashboardContext(session: SessionContext): DashboardContext {
   return {
-    id: `session_${uniqueId}`,
-    userId: `user_${username}`,
-    username,
-    tenantId: 'tenant_demo',
-    permissions: MOCK_PERMISSIONS,
-    entitlements: MOCK_ENTITLEMENTS,
-    featureFlags: MOCK_FEATURE_FLAGS,
-    dashboardSections: MOCK_DASHBOARD_SECTIONS,
-    expiresAt: Date.now() + 8 * 60 * 60 * 1000,
+    subjectId: session.subjectId,
+    subjectType: session.subjectType,
+    tenantId: session.tenantId,
+    partnerId: session.partnerId,
+    roles: session.roles,
+    evaluationTime: new Date(),
   };
+}
+
+export function createPermissionResult(session: SessionContext): PermissionResult {
+  return {
+    subjectId: session.subjectId,
+    capabilities: session.capabilities,
+  };
+}
+
+export function createEntitlementSnapshot(session: SessionContext): EntitlementSnapshot {
+  return {
+    tenantId: session.tenantId,
+    activeEntitlements: session.entitlements,
+  };
+}
+
+export function createFeatureSnapshot(session: SessionContext): FeatureSnapshot {
+  return {
+    enabledFeatures: session.featureFlags,
+  };
+}
+
+export function resolvePOSDashboard(session: SessionContext): VisibleSection[] {
+  const context: TenantContext = {
+    tenantId: session.tenantId,
+    permissions: session.capabilities,
+    entitlements: session.entitlements,
+    featureFlags: session.featureFlags.reduce((acc, flag) => {
+      acc[flag] = true;
+      return acc;
+    }, {} as Record<string, boolean>),
+  };
+  
+  return [...resolveVisibleSections(context)];
+}
+
+export function hasCapability(session: SessionContext, capabilityId: string): boolean {
+  return session.capabilities.includes(capabilityId);
+}
+
+export function hasEntitlement(session: SessionContext, entitlementId: string): boolean {
+  return session.entitlements.includes(entitlementId);
+}
+
+export function isFeatureEnabled(session: SessionContext, featureId: string): boolean {
+  return session.featureFlags.includes(featureId);
+}
+
+export function getCapabilityById(id: string): Capability | undefined {
+  return getPOSCapabilityById(id);
+}
+
+export function getEntitlementById(id: string): POSEntitlement | undefined {
+  return getPOSEntitlementById(id);
+}
+
+export function getFeatureFlagById(id: string): POSFeatureFlag | undefined {
+  return getPOSFeatureFlagById(id);
 }

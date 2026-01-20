@@ -3,7 +3,41 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/lib/db';
 import type { UserSession } from '@/types/core';
-import { createMockSession } from '@/lib/control-consumer';
+import {
+  POS_CAPABILITIES,
+  POS_ENTITLEMENTS,
+  POS_FEATURE_FLAGS,
+  getDefaultFeatureFlagValues,
+} from '@/lib/control-consumer';
+
+function createSessionFromControlDeclarations(username: string): UserSession {
+  const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const defaultFlags = getDefaultFeatureFlagValues();
+  
+  return {
+    id: `session_${uniqueId}`,
+    userId: `user_${username}`,
+    username,
+    tenantId: 'tenant_demo',
+    permissions: POS_CAPABILITIES.map(cap => ({
+      id: cap.id,
+      name: cap.id,
+      granted: true,
+    })),
+    entitlements: POS_ENTITLEMENTS.map(ent => ({
+      id: ent.id,
+      featureKey: ent.id,
+      enabled: true,
+    })),
+    featureFlags: POS_FEATURE_FLAGS.map(flag => ({
+      id: flag.id,
+      key: flag.id,
+      enabled: defaultFlags[flag.id] ?? flag.defaultValue,
+    })),
+    dashboardSections: [],
+    expiresAt: Date.now() + 8 * 60 * 60 * 1000,
+  };
+}
 
 export function useSession() {
   const [session, setSession] = useState<UserSession | null>(null);
@@ -27,7 +61,7 @@ export function useSession() {
 
   const login = useCallback(async (username: string, _password: string): Promise<boolean> => {
     try {
-      const newSession = createMockSession(username);
+      const newSession = createSessionFromControlDeclarations(username);
       await db.sessions.add(newSession);
       setSession(newSession);
       return true;

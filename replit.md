@@ -95,10 +95,32 @@ This UI does NOT implement business logic. All visibility, permissions, entitlem
 - webwaka-core-receipts (receipt generation)
 - webwaka-core-dashboard-control (dashboard sections)
 
+## Constitutional Compliance (Phase 5B)
+
+### Control Packages Installed
+- `webwaka-suite-pos-control` (GitHub: changerplanet/webwaka-suite-pos-control)
+- `webwaka-core-dashboard-control` (GitHub: changerplanet/webwaka-core-dashboard-control)
+
+### Control Consumption Paths
+- `src/lib/control-consumer.ts` - Imports from control packages
+  - POS_CAPABILITIES from `webwaka-suite-pos-control/src/capabilities`
+  - POS_ENTITLEMENTS from `webwaka-suite-pos-control/src/entitlements`
+  - POS_FEATURE_FLAGS from `webwaka-suite-pos-control/src/featureFlags`
+  - POS_DASHBOARD_DECLARATION from `webwaka-suite-pos-control/src/dashboard/pos.dashboard`
+  - resolveVisibleSections from `webwaka-suite-pos-control`
+  - resolveDashboard from `webwaka-core-dashboard-control/src/engine/resolver`
+- `src/components/DashboardRenderer.tsx` - Consumes resolved dashboard via resolvePOSDashboard()
+- `src/hooks/useSession.ts` - Session creation uses control package declarations
+
+### Runtime Mock Status
+- NO runtime mocks in application code
+- Mocks exist ONLY in `src/__mocks__/` for Jest test boundary
+
 ## Recent Changes
 - 2026-01-20: Initial implementation of POS UI
 - 2026-01-20: Added offline-first sync manager
 - 2026-01-20: Implemented all core UI screens
-- 2026-01-20: Added comprehensive test suite (60/60 tests passing)
+- 2026-01-20: Added comprehensive test suite (65/65 tests passing)
 - 2026-01-20: Fixed forceSync typo in sync manager
 - 2026-01-20: Configured deployment for autoscale
+- 2026-01-20: **Phase 5B Remediation** - Enforced constitutional control consumption

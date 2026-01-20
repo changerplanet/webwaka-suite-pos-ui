@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  transpilePackages: [
+    'webwaka-suite-pos-control',
+    'webwaka-core-dashboard-control',
+  ],
   async headers() {
     return [
       {

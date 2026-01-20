@@ -1,0 +1,204 @@
+
+Phase 5B — POS UI Constitutional Compliance Remediation
+
+⸻
+
+CONTEXT
+
+You are operating as an implementation platform (Replit) for the WebWaka Modular Platform.
+
+This task is a REMEDIATION, not a new feature build.
+
+The POS UI already exists, deploys correctly, and tests pass —
+however, it violates the WebWaka Ecosystem Constitution by re-implementing control logic in the UI instead of consuming canonical control layers.
+
+Your responsibility is to restore constitutional compliance without rewriting the UI.
+
+⸻
+
+SOURCE OF TRUTH
+
+GitHub Repo (MUST be used):
+changerplanet/webwaka-suite-pos-ui
+
+Canonical Control Layers (ALREADY IMPLEMENTED):
+	•	webwaka-suite-pos-control
+	•	webwaka-core-dashboard-control
+
+⸻
+
+HARD NON-NEGOTIABLE RULES
+
+🚫 DO NOT redesign UI
+🚫 DO NOT introduce new features
+🚫 DO NOT hardcode permissions, entitlements, or feature flags
+🚫 DO NOT re-implement gating logic
+🚫 DO NOT mock control logic in runtime code
+🚫 DO NOT change routing or visual layout
+
+✅ You MUST consume existing control layers exactly
+
+⸻
+
+OBJECTIVE (MANDATORY)
+
+Bring the POS UI into full constitutional compliance by making it a pure declarative consumer of:
+	•	webwaka-suite-pos-control (suite declarations)
+	•	webwaka-core-dashboard-control (resolution engine)
+
+⸻
+
+REQUIRED ACTIONS (EXECUTE IN ORDER)
+
+⸻
+
+1️⃣ CLONE & VERIFY REPO
+	1.	Clone:
+
+changerplanet/webwaka-suite-pos-ui
+
+
+	2.	Confirm:
+	•	Branch: main
+	•	UI already renders and tests pass before changes
+
+❗ If repo cannot be cloned → STOP IMMEDIATELY
+
+⸻
+
+2️⃣ INSTALL CONTROL DEPENDENCIES
+
+Add real dependencies (not dev, not mock):
+
+npm install webwaka-suite-pos-control webwaka-core-dashboard-control
+
+Verify they appear in package.json under dependencies.
+
+⸻
+
+3️⃣ REMOVE ALL RUNTIME MOCK CONTROL DATA
+
+Delete or disable completely from runtime paths:
+	•	Mock permissions
+	•	Mock entitlements
+	•	Mock feature flags
+	•	Mock dashboard sections
+	•	Any fallback logic like:
+
+if (!controlData) useMock()
+
+
+
+Mocks are allowed ONLY inside test files, never in app code.
+
+⸻
+
+4️⃣ REWIRE UI TO CONTROL ENGINE (CRITICAL)
+
+Refactor UI so that:
+	•	Dashboard sections are imported from:
+
+webwaka-suite-pos-control
+
+
+	•	Visibility resolution is done ONLY via:
+
+resolveDashboard(...)
+
+from:
+
+webwaka-core-dashboard-control
+
+
+	•	UI receives:
+	•	ResolvedDashboard
+	•	DashboardSnapshot
+
+The UI must:
+	•	Render exactly what the resolver returns
+	•	Display visibility reasons where provided
+	•	Never inspect permissions directly
+
+⸻
+
+5️⃣ SNAPSHOT MODE COMPLIANCE
+
+Ensure the UI:
+	•	Can render from:
+	•	live resolution
+	•	verified snapshot
+	•	Does NOT recompute access rules when snapshot is used
+	•	Rejects expired or tampered snapshots
+
+⸻
+
+6️⃣ UPDATE TESTS (MANDATORY)
+
+Update tests so that:
+	•	Tests FAIL if:
+	•	control packages are removed
+	•	resolver is bypassed
+	•	Visibility changes when control declarations change
+	•	Snapshot evaluation matches live evaluation
+
+Mocking is allowed ONLY at control package boundary.
+
+⸻
+
+7️⃣ FINAL VERIFICATION CHECKLIST (MUST PASS)
+
+Confirm ALL are TRUE:
+	•	UI imports from webwaka-suite-pos-control
+	•	UI imports from webwaka-core-dashboard-control
+	•	No permission/entitlement logic in UI
+	•	No runtime mock control data
+	•	Tests validate real control consumption
+	•	App builds and runs
+	•	Push to main
+
+⸻
+
+8️⃣ COMMIT & PUSH
+
+Commit message (exact):
+
+fix(pos-ui): enforce constitutional control consumption
+
+Push to:
+
+main
+
+Vercel must auto-deploy.
+
+⸻
+
+REQUIRED FINAL OUTPUT
+
+Return a short report containing:
+	1.	Confirmation that:
+	•	Control packages are installed
+	•	UI imports them directly
+	2.	File paths showing:
+	•	Where control declarations are consumed
+	•	Where resolveDashboard is called
+	3.	Confirmation:
+	•	No runtime mocks exist
+	4.	Commit SHA
+
+⸻
+
+HARD STOP
+
+⛔ Do NOT proceed to any new feature
+⛔ Do NOT touch other repos
+⛔ Stop after remediation and report
+
+⸻
+
+ACKNOWLEDGEMENT REQUIRED
+
+Reply only with:
+
+“I acknowledge and will remediate Phase 5B strictly as instructed.”
+
+Then proceed.

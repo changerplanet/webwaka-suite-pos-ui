@@ -180,33 +180,60 @@ describe('ProductGrid Component', () => {
 });
 
 describe('DashboardRenderer Component', () => {
-  const mockSession: UserSession = {
+  const fullSession: UserSession = {
     id: 'session_1',
     userId: 'user_1',
     username: 'testuser',
     tenantId: 'tenant_1',
-    permissions: [{ id: 'p1', name: 'pos.shift.manage', granted: true }],
-    entitlements: [{ id: 'e1', featureKey: 'pos.basic', enabled: true }],
-    featureFlags: [{ id: 'f1', key: 'offline_mode', enabled: true }],
-    dashboardSections: [
-      { id: 'ds1', title: 'Quick Sale', component: 'QuickSale', order: 1, visible: true },
-      { id: 'ds2', title: 'Reports', component: 'Reports', order: 2, visible: true, requiredEntitlement: 'reports.premium' },
+    permissions: [
+      { id: 'p1', name: 'pos:sale.view', granted: true },
+      { id: 'p2', name: 'pos:shift.view', granted: true },
+      { id: 'p3', name: 'pos:inventory.view', granted: true },
+      { id: 'p4', name: 'pos:reports.view', granted: true },
+      { id: 'p5', name: 'pos:settings.view', granted: true },
     ],
+    entitlements: [
+      { id: 'e1', featureKey: 'pos-access', enabled: true },
+      { id: 'e2', featureKey: 'pos-inventory-management', enabled: true },
+      { id: 'e3', featureKey: 'pos-advanced-reports', enabled: true },
+      { id: 'e4', featureKey: 'pos-admin', enabled: true },
+    ],
+    featureFlags: [{ id: 'f1', key: 'pos-enabled', enabled: true }],
+    dashboardSections: [],
     expiresAt: Date.now() + 3600000,
   };
 
-  it('renders visible dashboard sections', () => {
-    render(<DashboardRenderer session={mockSession} />);
-    expect(screen.getByText('Quick Sale')).toBeInTheDocument();
+  const limitedSession: UserSession = {
+    id: 'session_2',
+    userId: 'user_2',
+    username: 'cashier',
+    tenantId: 'tenant_1',
+    permissions: [
+      { id: 'p1', name: 'pos:sale.view', granted: true },
+      { id: 'p2', name: 'pos:shift.view', granted: true },
+    ],
+    entitlements: [
+      { id: 'e1', featureKey: 'pos-access', enabled: true },
+    ],
+    featureFlags: [{ id: 'f1', key: 'pos-enabled', enabled: true }],
+    dashboardSections: [],
+    expiresAt: Date.now() + 3600000,
+  };
+
+  it('renders visible dashboard sections from control layer', () => {
+    render(<DashboardRenderer session={fullSession} />);
+    expect(screen.getByText('Sales')).toBeInTheDocument();
+    expect(screen.getByText('Shifts')).toBeInTheDocument();
   });
 
-  it('does not render sections when missing required entitlement', () => {
-    render(<DashboardRenderer session={mockSession} />);
+  it('hides sections when missing required entitlement', () => {
+    render(<DashboardRenderer session={limitedSession} />);
+    expect(screen.getByText('Sales')).toBeInTheDocument();
     expect(screen.queryByText('Reports')).not.toBeInTheDocument();
   });
 
-  it('shows hidden reason in dev mode', () => {
-    render(<DashboardRenderer session={mockSession} devMode={true} />);
-    expect(screen.getByText(/Missing entitlement: reports.premium/)).toBeInTheDocument();
+  it('shows hidden sections in dev mode', () => {
+    render(<DashboardRenderer session={limitedSession} devMode={true} />);
+    expect(screen.getByText(/pos-reports/)).toBeInTheDocument();
   });
 });

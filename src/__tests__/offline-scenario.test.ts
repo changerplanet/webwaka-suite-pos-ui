@@ -1,8 +1,26 @@
 import { db, clearAllData } from '@/lib/db';
 import { syncManager } from '@/lib/sync-manager';
-import { createMockSession } from '@/lib/control-consumer';
+import {
+  POS_CAPABILITIES,
+  POS_ENTITLEMENTS,
+  POS_FEATURE_FLAGS,
+  resolvePOSDashboard,
+  type SessionContext,
+} from '@/lib/control-consumer';
 import type { Sale, Shift, Receipt } from '@/types/core';
 import { v4 as uuidv4 } from 'uuid';
+
+function createTestSession(username: string): SessionContext {
+  return {
+    subjectId: `user_${username}`,
+    subjectType: 'staff',
+    tenantId: 'tenant_demo',
+    roles: [],
+    capabilities: POS_CAPABILITIES.map(c => c.id),
+    entitlements: POS_ENTITLEMENTS.map(e => e.id),
+    featureFlags: POS_FEATURE_FLAGS.filter(f => f.defaultValue).map(f => f.id),
+  };
+}
 
 describe('Offline Scenario: Cashier Makes Sales Offline', () => {
   beforeEach(async () => {
@@ -14,11 +32,11 @@ describe('Offline Scenario: Cashier Makes Sales Offline', () => {
   });
 
   it('complete offline workflow: open shift, make sales, close shift, sync', async () => {
-    const session = createMockSession('cashier');
+    const session = createTestSession('cashier');
     
     const shift: Shift = {
       id: uuidv4(),
-      userId: session.userId,
+      userId: session.subjectId,
       tenantId: session.tenantId,
       openedAt: Date.now(),
       openingBalance: 100,
@@ -185,14 +203,23 @@ describe('Offline Scenario: Cashier Makes Sales Offline', () => {
   });
 });
 
-describe('Deterministic UI Rendering', () => {
-  it('same session data produces consistent dashboard sections', () => {
-    const session1 = createMockSession('user1');
-    const session2 = createMockSession('user1');
+describe('Deterministic UI Rendering via Control Layer', () => {
+  it('same session context produces same dashboard sections', () => {
+    const session1 = createTestSession('user1');
+    const session2 = createTestSession('user1');
     
-    expect(session1.dashboardSections).toEqual(session2.dashboardSections);
-    expect(session1.permissions).toEqual(session2.permissions);
-    expect(session1.entitlements).toEqual(session2.entitlements);
-    expect(session1.featureFlags).toEqual(session2.featureFlags);
+    const sections1 = resolvePOSDashboard(session1);
+    const sections2 = resolvePOSDashboard(session2);
+    
+    expect(sections1).toEqual(sections2);
+  });
+
+  it('dashboard sections come from control package declaration', () => {
+    const session = createTestSession('cashier');
+    const sections = resolvePOSDashboard(session);
+    
+    sections.forEach(section => {
+      expect(section.id).toMatch(/^pos-/);
+    });
   });
 });
