@@ -1,0 +1,217 @@
+
+⸻
+
+CONTEXT
+
+You are operating as Replit AI for the WebWaka Modular Rebuild.
+
+This task is Phase 5B: POS UI & Runtime.
+
+You are building the POS application runtime and UI as a pure consumer of existing core and control layers.
+
+🚫 You must NOT implement business rules
+🚫 You must NOT re-implement permissions, entitlements, pricing, inventory logic
+🚫 You must NOT hardcode roles, plans, or visibility
+🚫 You must NOT modify core or control repositories
+
+⸻
+
+SOURCE OF TRUTH
+
+GitHub Organization: ChangerPlanet
+
+Target Repository (MUST CLONE FIRST):
+https://github.com/changerplanet/webwaka-suite-pos-ui
+
+⛔ HARD STOP
+If this repository cannot be cloned:
+	•	STOP immediately
+	•	Do NOT scaffold locally
+	•	Do NOT write any code
+	•	Report back that cloning failed
+
+⸻
+
+WHAT THIS REPO IS
+
+webwaka-suite-pos-ui is:
+	•	A POS frontend + runtime
+	•	A consumer of:
+	•	webwaka-suite-pos-control
+	•	webwaka-core-inventory
+	•	webwaka-core-ledger
+	•	webwaka-core-payments
+	•	webwaka-core-receipts
+	•	webwaka-core-dashboard-control
+	•	A mobile-first, offline-first PWA
+
+This repo contains NO control definitions — only UI, runtime orchestration, and offline sync.
+
+⸻
+
+TECH STACK (LOCKED)
+	•	Framework: Next.js 14 (App Router)
+	•	Language: TypeScript
+	•	Styling: Tailwind CSS
+	•	State: Local runtime state only (no business state)
+	•	Offline Storage: IndexedDB (Dexie or equivalent)
+	•	Testing: Jest + React Testing Library
+	•	Deployment: GitHub → Vercel (already configured)
+
+⸻
+
+ARCHITECTURAL RULES (NON-NEGOTIABLE)
+
+1️⃣ Visibility & Access
+
+ALL visibility must come from:
+	•	Permissions
+	•	Entitlements
+	•	Feature Flags
+
+Resolved ONLY via:
+	•	webwaka-core-dashboard-control
+
+🚫 No if (role === "cashier")
+🚫 No UI permission checks
+
+⸻
+
+2️⃣ POS Control Consumption
+
+The UI must import and consume:
+	•	Capabilities
+	•	Entitlements
+	•	Feature flags
+	•	Dashboard section declarations
+
+From:
+	•	webwaka-suite-pos-control
+
+🚫 No duplication
+🚫 No reinterpretation
+
+⸻
+
+3️⃣ Inventory
+	•	Read availability from Inventory Core
+	•	Write reservations / adjustments via Inventory Core APIs
+	•	NEVER mutate stock locally except as optimistic UI
+
+⸻
+
+4️⃣ Ledger & Payments
+	•	UI emits events
+	•	Ledger computes truth
+	•	Payments handled via Core Payments
+	•	Receipts generated via Core Receipts
+
+🚫 UI must not compute balances
+🚫 UI must not store money totals as truth
+
+⸻
+
+5️⃣ Offline-First (MANDATORY)
+
+The POS must:
+	•	Work with no internet
+	•	Queue:
+	•	Sales
+	•	Inventory reservations
+	•	Payments (pending)
+	•	Sync deterministically when online
+	•	Handle conflict resolution gracefully
+
+Offline is not optional.
+
+⸻
+
+REQUIRED IMPLEMENTATION SCOPE
+
+A. UI SCREENS
+	•	Login / Session bootstrap (mock auth acceptable)
+	•	POS Home / Dashboard
+	•	Product Search & Quick Sale
+	•	Cart
+	•	Checkout
+	•	Receipt View
+	•	Shift Open / Close
+	•	Offline / Sync Status Indicator
+
+B. Runtime Layer
+	•	Event queue
+	•	Sync manager
+	•	IndexedDB schema
+	•	Snapshot hydration for:
+	•	Dashboard
+	•	Permissions
+	•	Entitlements
+	•	Feature flags
+
+C. Dashboard Integration
+	•	Consume POS dashboard declaration
+	•	Render sections dynamically
+	•	Show “why hidden” in dev mode
+
+⸻
+
+TESTING REQUIREMENTS
+
+You must provide tests proving:
+	•	UI renders deterministically for same snapshot
+	•	Hidden sections never render without entitlement
+	•	Offline → online sync replays events correctly
+	•	No cross-tenant leakage
+	•	POS works in airplane mode (simulated)
+
+Minimum coverage: 80%
+
+⸻
+
+DELIVERABLES
+	1.	Running POS UI in Replit
+	2.	All tests passing
+	3.	Offline-first verified
+	4.	No business logic in UI
+	5.	Code pushed to main
+
+⸻
+
+HARD STOP CONDITION
+
+A real-world scenario must be proven:
+
+“A cashier can make sales offline, close a shift, regain internet, and all events reconcile correctly with ledger, inventory, and receipts — with UI visibility controlled entirely by core rules.”
+
+If this is not proven:
+	•	STOP
+	•	Do NOT claim completion
+
+⸻
+
+REPORTING FORMAT (REQUIRED)
+
+When complete, report:
+	1.	Screens implemented
+	2.	Offline guarantees verified
+	3.	Control & core modules consumed
+	4.	Test summary + coverage
+	5.	Vercel deployment URL
+	6.	Final commit SHA
+
+⸻
+
+STOP AFTER COMPLETION
+
+⛔ Do NOT proceed to Phase 5C
+⛔ Await explicit authorization
+
+⸻
+
+ACKNOWLEDGEMENT
+
+Reply only with:
+
+“I acknowledge and will clone the repo before proceeding.”
+
+Then proceed.
