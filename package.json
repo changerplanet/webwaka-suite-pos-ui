@@ -1,0 +1,8 @@
+{
+  "name": "webwaka-suite-pos-ui",
+  "version": "0.1.0",
+  "description": "WebWaka POS UI module",
+  "scripts": {
+    "test": "echo 'No tests yet' && exit 0"
+  }
+}
