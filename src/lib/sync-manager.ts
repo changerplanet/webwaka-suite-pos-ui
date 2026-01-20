@@ -135,7 +135,7 @@ class SyncManager {
     }
   }
 
-  public async forcSync(): Promise<void> {
+  public async forceSync(): Promise<void> {
     if (navigator.onLine) {
       this.setStatus('online');
       await this.syncNow();

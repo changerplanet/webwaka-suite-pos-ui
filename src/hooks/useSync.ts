@@ -31,7 +31,7 @@ export function useSync() {
   }, []);
 
   const forceSync = useCallback(async () => {
-    await syncManager.forcSync();
+    await syncManager.forceSync();
     const counts = await syncManager.getEventCount();
     setPendingCount(counts.pending);
     setFailedCount(counts.failed);

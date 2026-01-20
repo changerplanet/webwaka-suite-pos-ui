@@ -73,3 +73,10 @@ describe('Offline-First Behavior', () => {
     expect(newCount.pending).toBeGreaterThanOrEqual(initialCount.pending);
   });
 });
+
+describe('Force Sync', () => {
+  it('forceSync method exists and is callable', async () => {
+    expect(typeof syncManager.forceSync).toBe('function');
+    await expect(syncManager.forceSync()).resolves.not.toThrow();
+  });
+});
