@@ -1,12 +1,10 @@
 import '@testing-library/jest-dom';
+import 'fake-indexeddb/auto';
 
-class MockIndexedDB {
-  constructor() {
-    this.stores = {};
-  }
+// Polyfill structuredClone for Node.js environments that don't have it
+if (typeof structuredClone === 'undefined') {
+  global.structuredClone = (obj) => JSON.parse(JSON.stringify(obj));
 }
-
-global.indexedDB = new MockIndexedDB();
 
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
@@ -20,4 +18,9 @@ Object.defineProperty(window, 'matchMedia', {
     removeEventListener: jest.fn(),
     dispatchEvent: jest.fn(),
   })),
+});
+
+Object.defineProperty(navigator, 'onLine', {
+  writable: true,
+  value: true,
 });

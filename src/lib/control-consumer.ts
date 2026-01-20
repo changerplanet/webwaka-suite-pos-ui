@@ -96,8 +96,9 @@ export function isFeatureEnabled(session: UserSession | null, flagKey: string): 
 }
 
 export function createMockSession(username: string): UserSession {
+  const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   return {
-    id: `session_${Date.now()}`,
+    id: `session_${uniqueId}`,
     userId: `user_${username}`,
     username,
     tenantId: 'tenant_demo',
