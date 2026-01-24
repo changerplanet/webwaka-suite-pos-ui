@@ -38,7 +38,7 @@ describe('Core Session Adapter', () => {
     it('should fetch session from Core API when online', async () => {
       const mockSession = {
         userId: 'user_123',
-        tenantId: 'tenant_demo',
+        tenantId: 'demo.webwaka',
         partnerId: 'partner_001',
         username: 'testuser',
         roles: ['pos:clerk'],
@@ -82,7 +82,7 @@ describe('Core Session Adapter', () => {
   describe('fetchTenantDetails', () => {
     it('should fetch tenant details from Core API', async () => {
       const mockTenant = {
-        id: 'tenant_demo',
+        id: 'demo.webwaka',
         name: 'Demo Tenant',
       };
 
@@ -107,7 +107,7 @@ describe('Core Session Adapter', () => {
     it('should cache session to localStorage', () => {
       const mockSession = {
         userId: 'user_123',
-        tenantId: 'tenant_demo',
+        tenantId: 'demo.webwaka',
         partnerId: 'partner_001',
         username: 'testuser',
         roles: ['pos:clerk'],
@@ -123,7 +123,7 @@ describe('Core Session Adapter', () => {
     it('should return null for expired cached session', () => {
       const expiredSession = {
         userId: 'user_123',
-        tenantId: 'tenant_demo',
+        tenantId: 'demo.webwaka',
         partnerId: 'partner_001',
         username: 'testuser',
         roles: ['pos:clerk'],
@@ -139,7 +139,7 @@ describe('Core Session Adapter', () => {
     it('should clear cached session', () => {
       const mockSession = {
         userId: 'user_123',
-        tenantId: 'tenant_demo',
+        tenantId: 'demo.webwaka',
         partnerId: 'partner_001',
         username: 'testuser',
         roles: ['pos:clerk'],
@@ -158,7 +158,7 @@ describe('Core Session Adapter', () => {
     it('should fetch fresh session when online', async () => {
       const mockSession = {
         userId: 'user_123',
-        tenantId: 'tenant_demo',
+        tenantId: 'demo.webwaka',
         partnerId: 'partner_001',
         username: 'testuser',
         roles: ['pos:clerk'],
@@ -178,7 +178,7 @@ describe('Core Session Adapter', () => {
     it('should use cached session when offline', async () => {
       const mockSession = {
         userId: 'user_123',
-        tenantId: 'tenant_demo',
+        tenantId: 'demo.webwaka',
         partnerId: 'partner_001',
         username: 'testuser',
         roles: ['pos:clerk'],

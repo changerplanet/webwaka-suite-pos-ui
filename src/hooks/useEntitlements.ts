@@ -3,7 +3,7 @@
  * 
  * Provides feature gating based on entitlements.
  * 
- * Canon Authority: Phase D-3.2 Implementation
+ * Canon Authority: Phase D-5 Implementation (Canon Alignment)
  * Mandate: STOP-SAFE / CANON-LOCK
  * 
  * Responsibilities:
@@ -11,6 +11,7 @@
  * - Enable/disable UI features based on entitlements
  * - Show soft warnings when offline
  * - Preserve offline functionality
+ * - Use canonical Demo Partner identifiers only
  */
 
 'use client';
@@ -23,6 +24,7 @@ import {
   getDemoPartnerEntitlements,
   clearCachedEntitlements,
 } from '@/lib/entitlement-manager';
+import { CANONICAL_DEMO_PARTNER_SLUG, CANONICAL_DEMO_TENANT_SLUG } from '@/lib/demo-safety-guard';
 import type { CoreEntitlementResponse } from '@/lib/entitlement-manager';
 
 export function useEntitlements(tenantId: string | null, partnerId: string | null) {
@@ -38,7 +40,8 @@ export function useEntitlements(tenantId: string | null, partnerId: string | nul
 
     try {
       // Special case: Demo Partner always has full entitlements
-      if (partnerId === 'partner_demo' || tenantId === 'tenant_demo') {
+      // Use canonical identifiers only
+      if (partnerId === CANONICAL_DEMO_PARTNER_SLUG || tenantId === CANONICAL_DEMO_TENANT_SLUG) {
         const demoEntitlements = getDemoPartnerEntitlements(tenantId, partnerId);
         setEntitlements(demoEntitlements);
         setLoading(false);

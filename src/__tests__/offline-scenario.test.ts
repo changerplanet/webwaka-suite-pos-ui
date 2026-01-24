@@ -14,7 +14,7 @@ function createTestSession(username: string): SessionContext {
   return {
     subjectId: `user_${username}`,
     subjectType: 'staff',
-    tenantId: 'tenant_demo',
+    tenantId: 'demo.webwaka',
     roles: [],
     capabilities: POS_CAPABILITIES.map(c => c.id),
     entitlements: POS_ENTITLEMENTS.map(e => e.id),

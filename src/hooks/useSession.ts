@@ -14,6 +14,7 @@ import {
   clearCachedCoreSession,
   isOnline,
 } from '@/lib/core-session-adapter';
+import { CANONICAL_DEMO_TENANT_SLUG } from '@/lib/demo-safety-guard';
 
 function createSessionFromControlDeclarations(
   username: string,
@@ -26,7 +27,8 @@ function createSessionFromControlDeclarations(
     id: `session_${uniqueId}`,
     userId: coreContext?.userId || `user_${username}`,
     username,
-    tenantId: coreContext?.tenantId || 'tenant_demo',
+    // Phase D-5: Use canonical demo tenant slug as fallback when offline
+    tenantId: coreContext?.tenantId || CANONICAL_DEMO_TENANT_SLUG,
     partnerId: coreContext?.partnerId,
     permissions: POS_CAPABILITIES.map(cap => ({
       id: cap.id,

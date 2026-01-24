@@ -17,7 +17,7 @@ function createTestSession(overrides: Partial<SessionContext> = {}): SessionCont
   return {
     subjectId: 'user_test',
     subjectType: 'staff',
-    tenantId: 'tenant_demo',
+    tenantId: 'demo.webwaka',
     roles: [],
     capabilities: POS_CAPABILITIES.map(c => c.id),
     entitlements: POS_ENTITLEMENTS.map(e => e.id),

@@ -3,26 +3,57 @@
  * 
  * Prevents irreversible operations in demo mode.
  * 
- * Canon Authority: Phase D-4.4 Implementation
+ * Canon Authority: Phase D-5 Implementation (Canon Alignment)
  * Mandate: STOP-SAFE / CANON-LOCK
  * 
  * CRITICAL CANON RULES:
  * - Demo Partner MUST NOT perform irreversible operations
  * - Demo data MUST be clearly separated from production
- * - Easy demo reset hooks (guards only, no mutation yet)
+ * - Demo mode detection MUST use canonical identifiers only
+ * 
+ * CANONICAL DEMO PARTNER IDENTIFIERS (LOCKED):
+ * - Partner Slug: webwaka-demo-partner
+ * - Tenant Slug: demo.webwaka
+ * - Flag: isDemoPartner = true
  * 
  * This module provides SAFETY GUARDS ONLY.
  */
 
 /**
+ * Canonical Demo Partner identifiers
+ * 
+ * These are the ONLY valid identifiers for the Demo Partner.
+ * All legacy identifiers (partner_demo, tenant_demo) have been removed.
+ */
+export const CANONICAL_DEMO_PARTNER_SLUG = 'webwaka-demo-partner';
+export const CANONICAL_DEMO_TENANT_SLUG = 'demo.webwaka';
+
+/**
  * Check if the current context is Demo Partner
  * 
- * @param partnerId - Partner ID
- * @param tenantId - Tenant ID
+ * This function checks against canonical identifiers only.
+ * It accepts session context from Core API which includes isDemoPartner flag.
+ * 
+ * @param partnerId - Partner ID or slug
+ * @param tenantId - Tenant ID or slug
+ * @param isDemoPartnerFlag - Optional explicit isDemoPartner flag from Core session
  * @returns true if Demo Partner, false otherwise
  */
-export function isDemoPartner(partnerId: string | null, tenantId: string | null): boolean {
-  return partnerId === 'partner_demo' || tenantId === 'tenant_demo';
+export function isDemoPartner(
+  partnerId: string | null,
+  tenantId: string | null,
+  isDemoPartnerFlag?: boolean
+): boolean {
+  // Preferred: Use explicit isDemoPartner flag from Core session
+  if (isDemoPartnerFlag !== undefined) {
+    return isDemoPartnerFlag;
+  }
+
+  // Fallback: Check canonical slugs
+  return (
+    partnerId === CANONICAL_DEMO_PARTNER_SLUG ||
+    tenantId === CANONICAL_DEMO_TENANT_SLUG
+  );
 }
 
 /**
@@ -40,17 +71,19 @@ export interface DemoProtectedResult<T> {
  * This function checks if an operation is allowed in demo mode.
  * If not allowed, it returns a result with `allowed: false`.
  * 
- * @param partnerId - Partner ID
- * @param tenantId - Tenant ID
+ * @param partnerId - Partner ID or slug
+ * @param tenantId - Tenant ID or slug
  * @param operationType - Type of operation (e.g., 'delete', 'export', 'payment')
+ * @param isDemoPartnerFlag - Optional explicit isDemoPartner flag from Core session
  * @returns Demo-protected result
  */
 export function guardDemoOperation<T>(
   partnerId: string | null,
   tenantId: string | null,
-  operationType: 'delete' | 'export' | 'payment' | 'irreversible'
+  operationType: 'delete' | 'export' | 'payment' | 'irreversible',
+  isDemoPartnerFlag?: boolean
 ): DemoProtectedResult<T> {
-  if (!isDemoPartner(partnerId, tenantId)) {
+  if (!isDemoPartner(partnerId, tenantId, isDemoPartnerFlag)) {
     // Not demo mode - allow all operations
     return { allowed: true };
   }
@@ -64,8 +97,10 @@ export function guardDemoOperation<T>(
       };
 
     case 'export':
-      // Export is allowed in demo mode (read-only)
-      return { allowed: true };
+      return {
+        allowed: false,
+        reason: 'Export operations are disabled in Demo Partner mode for safety.',
+      };
 
     case 'payment':
       return {
@@ -99,12 +134,17 @@ export const DEMO_FEATURE_FLAGS = {
 /**
  * Get demo-specific configuration
  * 
- * @param partnerId - Partner ID
- * @param tenantId - Tenant ID
+ * @param partnerId - Partner ID or slug
+ * @param tenantId - Tenant ID or slug
+ * @param isDemoPartnerFlag - Optional explicit isDemoPartner flag from Core session
  * @returns Demo configuration
  */
-export function getDemoConfig(partnerId: string | null, tenantId: string | null) {
-  const isDemo = isDemoPartner(partnerId, tenantId);
+export function getDemoConfig(
+  partnerId: string | null,
+  tenantId: string | null,
+  isDemoPartnerFlag?: boolean
+) {
+  const isDemo = isDemoPartner(partnerId, tenantId, isDemoPartnerFlag);
 
   return {
     isDemoMode: isDemo,
