@@ -34,11 +34,14 @@ export interface UserSession {
   userId: string;
   username: string;
   tenantId: string;
+  partnerId?: string; // Added for Phase D-3.1: Core session awareness
   permissions: Permission[];
   entitlements: Entitlement[];
   featureFlags: FeatureFlag[];
   dashboardSections: DashboardSection[];
   expiresAt: number;
+  coreSessionId?: string; // Added for Phase D-3.1: Core session tracking
+  lastSyncedAt?: number; // Added for Phase D-3.1: Last sync timestamp
 }
 
 export interface Product {

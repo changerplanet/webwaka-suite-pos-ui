@@ -9,16 +9,25 @@ import {
   POS_FEATURE_FLAGS,
   getDefaultFeatureFlagValues,
 } from '@/lib/control-consumer';
+import {
+  resolveCoreSessionContext,
+  clearCachedCoreSession,
+  isOnline,
+} from '@/lib/core-session-adapter';
 
-function createSessionFromControlDeclarations(username: string): UserSession {
+function createSessionFromControlDeclarations(
+  username: string,
+  coreContext?: { userId: string; tenantId: string; partnerId: string }
+): UserSession {
   const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const defaultFlags = getDefaultFeatureFlagValues();
   
   return {
     id: `session_${uniqueId}`,
-    userId: `user_${username}`,
+    userId: coreContext?.userId || `user_${username}`,
     username,
-    tenantId: 'tenant_demo',
+    tenantId: coreContext?.tenantId || 'tenant_demo',
+    partnerId: coreContext?.partnerId,
     permissions: POS_CAPABILITIES.map(cap => ({
       id: cap.id,
       name: cap.id,
@@ -61,11 +70,26 @@ export function useSession() {
 
   const login = useCallback(async (username: string, _password: string): Promise<boolean> => {
     try {
-      const newSession = createSessionFromControlDeclarations(username);
+      // Phase D-3.1: Attempt to resolve Core session context when online
+      let coreContext: { userId: string; tenantId: string; partnerId: string } | undefined;
+      
+      if (isOnline()) {
+        const coreSession = await resolveCoreSessionContext();
+        if (coreSession) {
+          coreContext = {
+            userId: coreSession.userId,
+            tenantId: coreSession.tenantId,
+            partnerId: coreSession.partnerId,
+          };
+        }
+      }
+
+      const newSession = createSessionFromControlDeclarations(username, coreContext);
       await db.sessions.add(newSession);
       setSession(newSession);
       return true;
-    } catch {
+    } catch (error) {
+      console.error('[useSession] Login failed:', error);
       return false;
     }
   }, []);
@@ -74,6 +98,8 @@ export function useSession() {
     if (session) {
       await db.sessions.delete(session.id);
     }
+    // Phase D-3.1: Clear cached Core session on logout
+    clearCachedCoreSession();
     setSession(null);
   }, [session]);
 

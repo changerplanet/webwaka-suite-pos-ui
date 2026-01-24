@@ -109,16 +109,41 @@ class SyncManager {
   }
 
   private async syncEvent(event: SyncEvent): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Phase D-3.3: Push event to Core API (append-only)
+    const CORE_API_BASE_URL = process.env.NEXT_PUBLIC_CORE_API_URL || 'http://localhost:3001';
     
-    if (event.type === 'sale') {
-      const saleId = event.payload.saleId as string;
-      if (saleId) {
-        await db.sales.update(saleId, { 
-          status: 'completed', 
-          syncedAt: Date.now() 
-        });
+    try {
+      const response = await fetch(`${CORE_API_BASE_URL}/sync/pos-events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          eventId: event.id,
+          eventType: event.type,
+          payload: event.payload,
+          createdAt: event.createdAt,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Core API returned ${response.status}`);
       }
+
+      // Update local sale status after successful sync
+      if (event.type === 'sale') {
+        const saleId = event.payload.saleId as string;
+        if (saleId) {
+          await db.sales.update(saleId, { 
+            status: 'completed', 
+            syncedAt: Date.now() 
+          });
+        }
+      }
+    } catch (error) {
+      console.error('[SyncManager] Failed to sync event to Core:', error);
+      throw error;
     }
   }
 
