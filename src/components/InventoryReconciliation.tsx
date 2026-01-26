@@ -75,14 +75,14 @@ export function InventoryReconciliation({ tenantId }: { tenantId: string }) {
       for (const product of posProducts) {
         const coreItem = coreMap.get(product.id);
         const coreQuantity = coreItem?.quantity ?? 0;
-        const delta = product.stock - coreQuantity;
+        const delta = product.stockQuantity - coreQuantity;
 
         if (delta !== 0) {
           discrepancyList.push({
             productId: product.id,
             sku: product.sku,
             name: product.name,
-            posQuantity: product.stock,
+            posQuantity: product.stockQuantity,
             coreQuantity,
             delta,
             lastSyncedAt: coreItem?.lastSyncedAt ?? null,
