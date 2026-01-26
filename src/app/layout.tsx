@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { ClerkAuthProvider } from '@webwaka/core-auth-ui';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -21,10 +22,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="bg-pos-dark text-white antialiased">
-        {children}
-      </body>
-    </html>
+    <ClerkAuthProvider>
+      <html lang="en">
+        <body className="bg-pos-dark text-white antialiased">
+          {children}
+        </body>
+      </html>
+    </ClerkAuthProvider>
   );
 }

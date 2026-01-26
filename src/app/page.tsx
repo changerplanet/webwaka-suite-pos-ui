@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { RequireAuth } from '@webwaka/core-auth-ui';
 import { useSession } from '@/hooks/useSession';
 import { useCart } from '@/hooks/useCart';
 import { useShift } from '@/hooks/useShift';
@@ -89,109 +90,111 @@ export default function POSPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-gray-900/80 border-b border-gray-800 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-gradient">WebWaka POS</h1>
-            <SyncIndicator />
+    <RequireAuth>
+      <div className="min-h-screen flex flex-col">
+        <header className="bg-gray-900/80 border-b border-gray-800 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <h1 className="text-xl font-bold text-gradient">WebWaka POS</h1>
+              <SyncIndicator />
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-400">
+                {session.username}
+              </span>
+              <button
+                onClick={logout}
+                className="text-sm text-red-400 hover:text-red-300"
+              >
+                Logout
+              </button>
+            </div>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-400">
-              {session.username}
-            </span>
+        </header>
+        
+        <nav className="bg-gray-900/50 border-b border-gray-800 px-4">
+          <div className="flex gap-1">
             <button
-              onClick={logout}
-              className="text-sm text-red-400 hover:text-red-300"
+              onClick={() => setActiveTab('pos')}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'pos' 
+                  ? 'border-pos-accent text-pos-accent' 
+                  : 'border-transparent text-gray-400 hover:text-white'
+              }`}
             >
-              Logout
+              Point of Sale
+            </button>
+            <button
+              onClick={() => setActiveTab('shift')}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'shift' 
+                  ? 'border-pos-accent text-pos-accent' 
+                  : 'border-transparent text-gray-400 hover:text-white'
+              }`}
+            >
+              Shift
             </button>
           </div>
-        </div>
-      </header>
-      
-      <nav className="bg-gray-900/50 border-b border-gray-800 px-4">
-        <div className="flex gap-1">
-          <button
-            onClick={() => setActiveTab('pos')}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'pos' 
-                ? 'border-pos-accent text-pos-accent' 
-                : 'border-transparent text-gray-400 hover:text-white'
-            }`}
-          >
-            Point of Sale
-          </button>
-          <button
-            onClick={() => setActiveTab('shift')}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'shift' 
-                ? 'border-pos-accent text-pos-accent' 
-                : 'border-transparent text-gray-400 hover:text-white'
-            }`}
-          >
-            Shift
-          </button>
-        </div>
-      </nav>
-      
-      <main className="flex-1 p-4">
-        {activeTab === 'pos' ? (
-          !currentShift ? (
-            <div className="h-full flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-gray-400 mb-4">Please open a shift to start selling</div>
-                <button
-                  onClick={() => setActiveTab('shift')}
-                  className="px-6 py-3 bg-pos-accent hover:bg-cyan-400 text-gray-900 rounded-lg font-medium"
-                >
-                  Open Shift
-                </button>
+        </nav>
+        
+        <main className="flex-1 p-4">
+          {activeTab === 'pos' ? (
+            !currentShift ? (
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-gray-400 mb-4">Please open a shift to start selling</div>
+                  <button
+                    onClick={() => setActiveTab('shift')}
+                    className="px-6 py-3 bg-pos-accent hover:bg-cyan-400 text-gray-900 rounded-lg font-medium"
+                  >
+                    Open Shift
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full">
+                <div className="lg:col-span-2">
+                  <ProductGrid onSelectProduct={handleSelectProduct} />
+                </div>
+                <div className="h-[calc(100vh-200px)]">
+                  <CartView
+                    cart={cart}
+                    onUpdateQuantity={updateQuantity}
+                    onRemoveItem={removeItem}
+                    onClear={clearCart}
+                    onCheckout={handleCheckout}
+                  />
+                </div>
+              </div>
+            )
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full">
-              <div className="lg:col-span-2">
-                <ProductGrid onSelectProduct={handleSelectProduct} />
-              </div>
-              <div className="h-[calc(100vh-200px)]">
-                <CartView
-                  cart={cart}
-                  onUpdateQuantity={updateQuantity}
-                  onRemoveItem={removeItem}
-                  onClear={clearCart}
-                  onCheckout={handleCheckout}
-                />
-              </div>
+            <div className="max-w-md mx-auto">
+              <ShiftManager
+                currentShift={currentShift}
+                loading={shiftLoading}
+                onOpenShift={openShift}
+                onCloseShift={closeShift}
+              />
             </div>
-          )
-        ) : (
-          <div className="max-w-md mx-auto">
-            <ShiftManager
-              currentShift={currentShift}
-              loading={shiftLoading}
-              onOpenShift={openShift}
-              onCloseShift={closeShift}
-            />
-          </div>
+          )}
+        </main>
+        
+        {showCheckout && (
+          <CheckoutModal
+            cart={cart}
+            onComplete={handleCompleteCheckout}
+            onCancel={() => setShowCheckout(false)}
+          />
         )}
-      </main>
-      
-      {showCheckout && (
-        <CheckoutModal
-          cart={cart}
-          onComplete={handleCompleteCheckout}
-          onCancel={() => setShowCheckout(false)}
-        />
-      )}
-      
-      {lastReceipt && (
-        <ReceiptView
-          receipt={lastReceipt}
-          onClose={() => setLastReceipt(null)}
-        />
-      )}
-    </div>
+        
+        {lastReceipt && (
+          <ReceiptView
+            receipt={lastReceipt}
+            onClose={() => setLastReceipt(null)}
+          />
+        )}
+      </div>
+    </RequireAuth>
   );
 }
