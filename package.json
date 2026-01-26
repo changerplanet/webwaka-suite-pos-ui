@@ -12,6 +12,7 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "@webwaka/core-auth-ui": "github:changerplanet/webwaka-core-auth-ui#088394c",
     "dexie": "^4.0.4",
     "dexie-react-hooks": "^1.1.7",
     "fake-indexeddb": "^6.2.5",
@@ -19,7 +20,6 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "uuid": "^9.0.1",
-    "@webwaka/core-auth-ui": "github:changerplanet/webwaka-core-auth-ui#v0.1.0",
     "webwaka-core-dashboard-control": "github:changerplanet/webwaka-core-dashboard-control",
     "webwaka-suite-pos-control": "github:changerplanet/webwaka-suite-pos-control"
   },
